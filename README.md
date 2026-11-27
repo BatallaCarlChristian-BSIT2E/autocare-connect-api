@@ -12,13 +12,15 @@ Backend prototype for the AutoCare Connect appointment and vehicle maintenance s
 ## Run locally
 
 1. Install Node.js 20 or newer and MySQL 8.
-2. Create the database by importing `database/schema.sql` in MySQL/phpMyAdmin, or let TypeORM create tables in a local development database.
+2. Create the database by importing `database/schema.sql` in MySQL/phpMyAdmin, or let TypeORM create tables in a local development database. To load the shared demo records, then import `database/demo-data.sql`.
 3. Copy `.env.example` to `.env`, then set the local MySQL connection values and a private random `JWT_SECRET`.
 4. Run `npm install`.
 5. Run `npm run start:dev`. The API listens at `http://localhost:3000/api/v1` by default.
 6. Import `postman/AutoCare-Connect.postman_collection.json` into Postman. Register a user and log in; the login request saves the returned token in the collection variable.
 
 `DB_SYNCHRONIZE=true` is for a disposable local development database only. Turn it off for a database with data you need to preserve; use the supplied SQL schema or migrations for controlled changes.
+
+`database/demo-data.sql` replaces the demo rows in customers, services, vehicles, appointments, service history, inventory, and reminders. It leaves the `users` table unchanged. Back up business data before running it on a database you need to preserve.
 
 ## Authentication and roles
 
