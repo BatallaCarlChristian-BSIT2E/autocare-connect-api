@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+/postman/AutoCare-Connect.postman_collection.json
+coverage/
+*.log
+*.tsbuildinfo

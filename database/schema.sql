@@ -1,0 +1,105 @@
+CREATE DATABASE IF NOT EXISTS autocare_connect CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE autocare_connect;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('customer','advisor','admin') NOT NULL DEFAULT 'customer',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS customers (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  first_name VARCHAR(50) NOT NULL,
+  last_name VARCHAR(55) NOT NULL,
+  phone VARCHAR(15) NOT NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS vehicles (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  make VARCHAR(60) NOT NULL,
+  model VARCHAR(60) NOT NULL,
+  year SMALLINT NOT NULL,
+  license_plate VARCHAR(20) NOT NULL UNIQUE,
+  mileage INT NOT NULL DEFAULT 0,
+  customer_id INT NOT NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_vehicles_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS services (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  service_name VARCHAR(120) NOT NULL,
+  description TEXT NULL,
+  price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  duration_minutes INT NOT NULL DEFAULT 60,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  customer_id INT NOT NULL,
+  vehicle_id INT NOT NULL,
+  service_id INT NOT NULL,
+  scheduled_at DATETIME NOT NULL,
+  service_description VARCHAR(500) NOT NULL,
+  status ENUM('pending','scheduled','confirmed','in_progress','completed','cancelled') NOT NULL DEFAULT 'pending',
+  notes TEXT NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_appointments_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_appointments_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_appointments_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE RESTRICT,
+  INDEX idx_appointments_scheduled_at (scheduled_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS service_history (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  appointment_id INT NULL,
+  vehicle_id INT NOT NULL,
+  description VARCHAR(500) NOT NULL,
+  total_cost DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  date_completed DATE NOT NULL,
+  mileage INT NULL,
+  next_due_date DATE NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_service_history_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_service_history_appointment FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS reminders (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  vehicle_id INT NOT NULL,
+  service_id INT NOT NULL,
+  due_date DATE NOT NULL,
+  status ENUM('pending','sent','dismissed') NOT NULL DEFAULT 'pending',
+  sent_at DATETIME NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_reminders_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_reminders_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE RESTRICT,
+  INDEX idx_reminders_due_date (due_date)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS inventory_items (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  item_name VARCHAR(100) NOT NULL,
+  sku VARCHAR(50) NOT NULL UNIQUE,
+  quantity_in_stock INT NOT NULL DEFAULT 0,
+  unit_price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  reorder_level INT NOT NULL DEFAULT 0,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT chk_inventory_quantity_nonnegative CHECK (quantity_in_stock >= 0),
+  CONSTRAINT chk_inventory_price_nonnegative CHECK (unit_price >= 0)
+) ENGINE=InnoDB;
